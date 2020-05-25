@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
+import os
+import re
 
 def main():
-    import os
-    import re
 
     # iterate over the files in the current folder and call get_files() to get the data_files
     try:
