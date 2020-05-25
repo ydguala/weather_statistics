@@ -1,5 +1,6 @@
-This script is to solve the Code Clinic problem of extracting weather statistics from 4 files and present them as a plot graph in a GUI
-The python internal modules used will be;
+This script is to solve the Code Clinic problem of extracting weather statistics from 4 files and present them as a plot graph in a tkinter GUI.
+The python internal modules used will be:
+
 - csv       : import tab delimited data files
 - re        : regex to parse date/time values
 - datetime  : manipulate datetime obj
