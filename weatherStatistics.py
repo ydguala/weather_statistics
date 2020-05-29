@@ -5,6 +5,7 @@ import re
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import tkinter
+from tkinter import ttk
 
 def main():
 
@@ -56,12 +57,9 @@ def main():
     except Exception as e:
         print("Custom error:", type(e), e)
 
-
-
     # now we will pass the numpy arrays to matplotlib
     try:
         from matplotlib import pyplot as plt
-
 
         x = nfecha
         y = npresion
@@ -94,8 +92,11 @@ def main():
 
 def MatplotCanvas(x, y):
 
+    startDate = ''
+    endDate = ''
+
     root = tkinter.Tk()
-    root.wm_title("Embedding in Tk")
+    root.title("Embedding in Tk")
 
     f = Figure(figsize=(5, 5), dpi=100)
     a = f.add_subplot(111)
@@ -109,6 +110,16 @@ def MatplotCanvas(x, y):
     toolbar = NavigationToolbar2Tk(canvas, root)
     toolbar.update()
     canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+
+    labelStart = ttk.Label(root,text="Start:").pack(side=tkinter.LEFT)
+    entryStart = ttk.Entry(root, width=30)
+    entryStart.insert(0, str(x[0]))
+    entryStart.pack(side=tkinter.LEFT)
+
+    labelEnd = ttk.Label(root,text="End:").pack(side=tkinter.LEFT)
+    entryEnd = ttk.Entry(root, width=30)
+    entryEnd.insert(0, str(x[-1]))
+    entryEnd.pack(side = tkinter.LEFT)
 
     tkinter.mainloop()
 
