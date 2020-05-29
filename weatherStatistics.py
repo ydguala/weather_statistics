@@ -111,15 +111,36 @@ def MatplotCanvas(x, y):
     toolbar.update()
     canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 
-    labelStart = ttk.Label(root,text="Start:").pack(side=tkinter.LEFT)
-    entryStart = ttk.Entry(root, width=30)
-    entryStart.insert(0, str(x[0]))
-    entryStart.pack(side=tkinter.LEFT)
+    panedWindow = ttk.PanedWindow(root, orient=tkinter.HORIZONTAL)
+    panedWindow.pack(fill=tkinter.BOTH, expand=True )
 
-    labelEnd = ttk.Label(root,text="End:").pack(side=tkinter.LEFT)
-    entryEnd = ttk.Entry(root, width=30)
+    # frame0 = ttk.Frame(panedWindow)
+    frame1 = ttk.Frame(panedWindow)
+    # frame2 = ttk.Frame(panedWindow)
+    # panedWindow.add(frame0, weight=1)
+    panedWindow.add(frame1, weight=2)
+    # panedWindow.add(frame2, weight=1)
+
+    labelStart = ttk.Label(frame1, text= "Start\t: ")
+    labelStart.config(font=("Courier", 16))
+    labelStart.grid(row=0, column=0, padx=10)
+
+    entryStart = ttk.Entry(frame1, width=30)
+    entryStart.insert(0, str(x[0]))
+    entryStart.grid(row=0, column=1, padx=10)
+
+
+    labelEnd = ttk.Label(frame1,text="End\t: ")
+    labelEnd.config(font=("Courier", 16))
+    labelEnd.grid(row=1, column=0, padx=10)
+
+    entryEnd = ttk.Entry(frame1, width=30)
     entryEnd.insert(0, str(x[-1]))
-    entryEnd.pack(side = tkinter.LEFT)
+    entryEnd.grid(row=1, column=1, padx=10)
+
+    updateButton = ttk.Button(frame1,
+                    text="UPDATE").grid(row=0, column=2, rowspan=2, padx=10)
+
 
     tkinter.mainloop()
 
