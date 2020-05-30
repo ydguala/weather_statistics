@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-import os
-import re
+import os, re, csv
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib import pyplot as plt
 import tkinter
-from tkinter import ttk
+from tkinter import ttk, messagebox
+from datetime import datetime
+import numpy as np
+
 
 def main():
 
@@ -21,10 +24,6 @@ def main():
 
     # Once we got the files we start importing the data to numpy arrays
     try:
-        import csv
-        import pandas as pd
-        import numpy as np
-        from datetime import datetime
 
         # we  will initially extract and store the data in 2 lists
         fecha = []
@@ -43,36 +42,20 @@ def main():
                     # the y axis of the plot was displayed unordered because it was not float
                     presion.append(float(row[2]))
 
-        #         print("fecha :", fecha[-1])
-        #         print("presion :", presion[-1])
-        #         print("-------------")
             print("loading data from: ", file)
         nfecha = np.array(fecha)
         npresion = np.array(presion)
-
-        # print("n fecha :", nfecha[-1])
-        # print("n presion :", npresion[-1])
-        # print("-------------")
 
     except Exception as e:
         print("Custom error:", type(e), e)
 
     # now we will pass the numpy arrays to matplotlib
     try:
-        from matplotlib import pyplot as plt
-
         x = nfecha
         y = npresion
 
-        # root = Root()
         MatplotCanvas(x,y)
 
-        # plt.title("Weather Statistics")
-        # plt.xlabel("FECHA")
-        # plt.ylabel("BAROMETRIC PRESSURE")
-        # plt.scatter(x, y)
-
-        # plt.show()
     except tkinter.TclError as e:
 
         import platform
@@ -82,15 +65,11 @@ def main():
     except Exception as e:
         print("Custom error Passing data to matplotlib:", type(e), e)
 
-# class Root(tkinter):
-#     def __init__(self):
-#         super(Root, self).__init__()
-#         self.title("Tkinter Matplotlib embedding")
-#         self.minsize(640, 400)
+def MatplotCanvas(x: np.array, y: np.array):
+    """ it creates a scatter plot embeded in tk Figure with the narrays x and y.
 
-#         self.MatplotCanvas()
-
-def MatplotCanvas(x, y):
+    args x, y type numpy.array
+    """
 
     startDate = ''
     endDate = ''
@@ -103,7 +82,6 @@ def MatplotCanvas(x, y):
     a.scatter(x,y)
 
     canvas = FigureCanvasTkAgg (f, master=root)
-    # canvas.show()
     canvas.draw()
     canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=True)
 
@@ -114,24 +92,17 @@ def MatplotCanvas(x, y):
     panedWindow = ttk.PanedWindow(root, orient=tkinter.HORIZONTAL)
     panedWindow.pack(fill=tkinter.BOTH, expand=True )
 
-    # frame0 = ttk.Frame(panedWindow)
     frame1 = ttk.Frame(panedWindow)
-    # frame2 = ttk.Frame(panedWindow)
-    # panedWindow.add(frame0, weight=1)
     panedWindow.add(frame1, weight=2)
-    # panedWindow.add(frame2, weight=1)
 
-    labelStart = ttk.Label(frame1, text= "Start\t: ")
-    labelStart.config(font=("Courier", 16))
+    labelStart = ttk.Label(frame1, font=("Courier", 16), text= "Start\t: ")
     labelStart.grid(row=0, column=0, padx=10)
 
     entryStart = ttk.Entry(frame1, width=30)
     entryStart.insert(0, str(x[0]))
     entryStart.grid(row=0, column=1, padx=10)
 
-
-    labelEnd = ttk.Label(frame1,text="End\t: ")
-    labelEnd.config(font=("Courier", 16))
+    labelEnd = ttk.Label(frame1, font=("Courier", 16), text="End\t: ")
     labelEnd.grid(row=1, column=0, padx=10)
 
     entryEnd = ttk.Entry(frame1, width=30)
@@ -139,10 +110,26 @@ def MatplotCanvas(x, y):
     entryEnd.grid(row=1, column=1, padx=10)
 
     updateButton = ttk.Button(frame1,
+                    command=lambda: updatePlot(entryStart.get(), entryEnd.get()),
                     text="UPDATE").grid(row=0, column=2, rowspan=2, padx=10)
 
-
     tkinter.mainloop()
+
+
+def updatePlot(entryStart, entryEnd):
+    """
+    Function called when the button UPDATE is clicked.
+
+    args entryStart, entryEnd: should be strings in datetime format '%Y-%m-%d %H:%M:%S'
+    """
+    try:
+        s = datetime.strptime(entryStart, '%Y-%m-%d %H:%M:%S')
+        e = datetime.strptime(entryEnd, '%Y-%m-%d %H:%M:%S')
+        msg = ("start:",s,"end:",e)
+        messagebox.showinfo('warn', msg)
+
+    except Exception as e:
+        messagebox.showerror('err',"custom error updating plot:", type(e),e)
 
 
 def get_files(regex):
