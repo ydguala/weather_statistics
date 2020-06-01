@@ -18,43 +18,13 @@ def main():
         pattern = r"Environmental_Data_Deep_Moor_20[0-9]{2}\.txt"
 
         data_files = get_files(pattern)
+        # Returns nfecha and npresion which are 1D numpy arrays containing
+        # date and barometric pressure extracted from data_files(list) argument
+        x, y = extractData(data_files)
 
-    except Exception as e:
-        print("Custom error gettin files: ", type(e), e)
-
-    # Once we got the files we start importing the data to numpy arrays
-    try:
-
-        # we  will initially extract and store the data in 2 lists
-        fecha = []
-        presion = []
-
-        for file in data_files:
-            with open(file) as f:
-                reader = csv.reader(f, delimiter='\t')
-                next(reader)                            # skipping headers
-                for row in reader:
-                    # row[0] is the date time column which we transform to a datetime object
-                    datetime_object = datetime.strptime(row[0], '%Y_%m_%d %H:%M:%S')
-                    fecha.append(datetime_object)
-
-                    # row[2] is the barometric pressure
-                    # the y axis of the plot was displayed unordered because it was not float
-                    presion.append(float(row[2]))
-
-            print("loading data from: ", file)
-        nfecha = np.array(fecha)
-        npresion = np.array(presion)
-
-    except Exception as e:
-        print("Custom error:", type(e), e)
-
-    # now we will pass the numpy arrays to matplotlib
-    try:
-        x = nfecha
-        y = npresion
-
-        MatplotCanvas(x,y)
+        plot1 = Plot(x, y)
+        plot1.scatterPlot()
+        tkinter.mainloop()
 
     except tkinter.TclError as e:
 
@@ -63,74 +33,85 @@ def main():
         print("The OS is ", platform.platform(), "you may need a Xming like server to be running in Windows")
 
     except Exception as e:
-        print("Custom error Passing data to matplotlib:", type(e), e)
+        print("Custom error gettin files: ", type(e), e)
 
-def MatplotCanvas(x: np.array, y: np.array):
+
+class Plot:
     """ it creates a scatter plot embeded in tk Figure with the narrays x and y.
 
     args x, y type numpy.array
     """
+    def __init__(self, x, y):
 
-    startDate = ''
-    endDate = ''
+        self.xAxis = x
+        self.yAxis = y
 
-    root = tkinter.Tk()
-    root.title("Embedding in Tk")
+        root = tkinter.Tk()
+        root.title("PLOT Embedded in Tk")
 
-    f = Figure(figsize=(5, 5), dpi=100)
-    a = f.add_subplot(111)
-    a.scatter(x,y)
+        f = Figure(figsize=(5, 5), dpi=100)
+        self.subPlot = f.add_subplot(111)
 
-    canvas = FigureCanvasTkAgg (f, master=root)
-    canvas.draw()
-    canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=True)
+        # subPlot.scatter(x,y)
 
-    toolbar = NavigationToolbar2Tk(canvas, root)
-    toolbar.update()
-    canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+        canvas = FigureCanvasTkAgg (f, master=root)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=True)
 
-    panedWindow = ttk.PanedWindow(root, orient=tkinter.HORIZONTAL)
-    panedWindow.pack(fill=tkinter.BOTH, expand=True )
+        toolbar = NavigationToolbar2Tk(canvas, root)
+        toolbar.update()
+        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 
-    frame1 = ttk.Frame(panedWindow)
-    panedWindow.add(frame1, weight=2)
+        panedWindow = ttk.PanedWindow(root, orient=tkinter.HORIZONTAL)
+        panedWindow.pack(fill=tkinter.BOTH, expand=True )
 
-    labelStart = ttk.Label(frame1, font=("Courier", 16), text= "Start\t: ")
-    labelStart.grid(row=0, column=0, padx=10)
+        frame1 = ttk.Frame(panedWindow)
+        panedWindow.add(frame1, weight=2)
 
-    entryStart = ttk.Entry(frame1, width=30)
-    entryStart.insert(0, str(x[0]))
-    entryStart.grid(row=0, column=1, padx=10)
+        labelStart = ttk.Label(frame1, font=("Courier", 16), text= "Start\t: ")
+        labelStart.grid(row=0, column=0, padx=10)
 
-    labelEnd = ttk.Label(frame1, font=("Courier", 16), text="End\t: ")
-    labelEnd.grid(row=1, column=0, padx=10)
+        entryStart = ttk.Entry(frame1, width=30)
+        entryStart.insert(0, str(self.xAxis[0]))
+        entryStart.grid(row=0, column=1, padx=10)
 
-    entryEnd = ttk.Entry(frame1, width=30)
-    entryEnd.insert(0, str(x[-1]))
-    entryEnd.grid(row=1, column=1, padx=10)
+        labelEnd = ttk.Label(frame1, font=("Courier", 16), text="End\t: ")
+        labelEnd.grid(row=1, column=0, padx=10)
 
-    updateButton = ttk.Button(frame1,
-                    command=lambda: updatePlot(entryStart.get(), entryEnd.get()),
-                    text="UPDATE").grid(row=0, column=2, rowspan=2, padx=10)
+        entryEnd = ttk.Entry(frame1, width=30)
+        entryEnd.insert(0, str(self.xAxis[-1]))
+        entryEnd.grid(row=1, column=1, padx=10)
 
-    tkinter.mainloop()
+        # in the update button we call updatePlot
+        updateButton = ttk.Button(frame1,
+                        command=lambda: updatePlot(entryStart.get(), entryEnd.get()),
+                        text="UPDATE").grid(row=0, column=2, rowspan=2, padx=10)
 
+        def updatePlot(entryStart, entryEnd):
+            """
+            Function called when the button UPDATE is clicked.
 
-def updatePlot(entryStart, entryEnd):
-    """
-    Function called when the button UPDATE is clicked.
+            args entryStart, entryEnd: should be strings in datetime format '%Y-%m-%d %H:%M:%S'
+            """
+            try:
+                s = datetime.strptime(entryStart, '%Y-%m-%d %H:%M:%S')
+                e = datetime.strptime(entryEnd, '%Y-%m-%d %H:%M:%S')
+                if s < self.xAxis[0] or e > self.xAxis[-1]:
+                    class dateOutOfRange(BaseException):
+                        result = "the date ranges introduced are not between {} and {}".format(self.xAxis[0], self.xAxis[-1])
+                    raise dateOutOfRange
+                else:
+                    result = "fecha start mayor o igual"
+                msg = ("start:",s,"end:",e,"\nresult: {} a {}".format(result, self.xAxis[0]))
+                messagebox.showinfo('warn', msg)
 
-    args entryStart, entryEnd: should be strings in datetime format '%Y-%m-%d %H:%M:%S'
-    """
-    try:
-        s = datetime.strptime(entryStart, '%Y-%m-%d %H:%M:%S')
-        e = datetime.strptime(entryEnd, '%Y-%m-%d %H:%M:%S')
-        msg = ("start:",s,"end:",e)
-        messagebox.showinfo('warn', msg)
+            except dateOutOfRange:
+                messagebox.showerror("Error", dateOutOfRange.result)
+            except Exception as e:
+                messagebox.showerror("Error", "Error updating plot:\n{}".format(e))
 
-    except Exception as e:
-        messagebox.showerror('err',"custom error updating plot:", type(e),e)
-
+    def scatterPlot(self):
+            self.subPlot.scatter(self.xAxis, self.yAxis)
 
 def get_files(regex):
     """ Returns a list of files in the current folder that match pattern in their name.
@@ -146,6 +127,32 @@ def get_files(regex):
     if len(files) == 0:
         raise Exception("ERROR: no Environmental_Data_Deep_Moor_20xx.txt to import in " + str(os.getcwd()))
     else: return files
+
+def extractData(data_files):
+    """ Returns nfecha and npresion which are 1D numpy arrays containing date and barometric
+        pressure extracted from data_files(list) argument
+    """
+    # we  will initially extract and store the data in 2 lists
+    fecha = []
+    presion = []
+
+    for file in data_files:
+        with open(file) as f:
+            reader = csv.reader(f, delimiter='\t')
+            next(reader)                            # skipping headers
+            for row in reader:
+                # row[0] is the date time column which we transform to a datetime object
+                datetime_object = datetime.strptime(row[0], '%Y_%m_%d %H:%M:%S')
+                fecha.append(datetime_object)
+
+                # row[2] is the barometric pressure
+                # the y axis of the plot was displayed unordered because it was not float
+                presion.append(float(row[2]))
+
+        print("loading data from: ", file)
+    nfecha = np.array(fecha)
+    npresion = np.array(presion)
+    return nfecha, npresion
 
 
 # the following IF statement is done to identify if the script is being executed or imported as a module
