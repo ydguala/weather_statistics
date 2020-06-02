@@ -46,8 +46,6 @@ class Plot:
 
         self.xAxis = x
         self.yAxis = y
-        self.subX = x
-        self.subY = y
 
         root = tkinter.Tk()
         root.title("PLOT Embedded in Tk")
@@ -90,8 +88,7 @@ class Plot:
         # in the update button we call updatePlot
         updateButton = ttk.Button(frame1,
                         command=lambda: self.updatePlot(entryStart.get(), entryEnd.get()),
-                        text="UPDATE",
-                        font = 'Arial 18 bold').grid(row=0, column=2, rowspan=2, padx=10)
+                        text="UPDATE").grid(row=0, column=2, rowspan=2, padx=10)
 
     def updatePlot(self, entryStart, entryEnd):
         """
@@ -110,49 +107,23 @@ class Plot:
                                  message='End Date must be after Start Date')
                 return
             else:
-                # subArrayX = self.buildSubArray(s, e)
+                # This would return a list with all dates >= s
                 # itemindexS = np.where(self.xAxis >= s)
-                # itemindexE = np.where(self.xAxis <= e)
+
+                # searchsorted: Find indices where elements should be inserted
+                # to maintain order.
                 itemindexS = np.searchsorted(self.xAxis, s)
                 itemindexE = np.searchsorted(self.xAxis, e)
-                # # messagebox.showinfo("info", (subArrayX[0], subArrayX[-1]))
-                # self.subX = subArrayX
-                # self.buildSubArray(s, e)
+
                 self.subPlot.clear()
 
-                # self.subPlot.plot_d
-                # messagebox.showinfo("info", (self.xAxis[itemindexS], self.yAxis[itemindexS]))
-
-                # self.subPlot.scatter([self.xAxis[itemindexS], self.xAxis[itemindexE] ],
-                #                     [self.yAxis[itemindexS], self.yAxis[itemindexE] ])
                 self.subPlot.scatter(self.xAxis[itemindexS:itemindexE] ,
                                     self.yAxis[itemindexS:itemindexE])
                 self.canvas.draw()
 
         except Exception as e:
             messagebox.showerror("Error", "Error updating plot:\n{}".format(e))
-        # else:
-        #     self.scatterPlot()
 
-    # it returns an array from xAxes with dates between the given start
-    # and end dates
-    # def buildSubArray(self, s, e):
-    #     subListX = []
-    #     subListY = []
-    #     for d in self.xAxis:
-    #         if d >= s and d <= e:
-    #             subListX.append(d)
-    #             itemindex = np.where(self.xAxis == d)
-    #             print(itemindex, self.yAxis[itemindex])
-    #             subListY.append(self.yAxis[itemindex])
-    #     self.subX = np.array(subListX)
-    #     self.subY = np.array(subListY)
-    #     messagebox.showinfo("info", (self.subX[0], "\n",self.subY[0]))
-
-        # return np.array(subListX)
-
-    # def scatterPlot(self):
-    #     self.subPlot.scatter(self.subX, self.subY)
 
 def get_files(regex):
     """ Returns a list of files in the current folder that match pattern in their name.
@@ -162,7 +133,6 @@ def get_files(regex):
     files = []
     for f in dir_files:
         if re.search(regex, f):
-            # print(file)
             files.append(f)
 
     if len(files) == 0:
