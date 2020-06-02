@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, csv
+import os, platform, re, csv
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib import pyplot as plt
@@ -23,12 +23,10 @@ def main():
         x, y = extractData(data_files)
 
         plot1 = Plot(x, y)
-        plot1.scatterPlot()
         tkinter.mainloop()
 
     except tkinter.TclError as e:
 
-        import platform
         print(type(e), e)
         print("The OS is ", platform.platform(), "you may need a Xming like server to be running in Windows")
 
@@ -42,25 +40,32 @@ class Plot:
     args x, y type numpy.array
     """
     def __init__(self, x, y):
+        # The Axes of the plot are the data boundaries
+        # As we display all data in the first plot the Axis are
+        # also equal to the Axes
 
         self.xAxis = x
         self.yAxis = y
+        self.subX = x
+        self.subY = y
 
         root = tkinter.Tk()
         root.title("PLOT Embedded in Tk")
+        m = root.maxsize()
+        root.geometry('{}x{}+0+0'.format(*m))
 
         f = Figure(figsize=(5, 5), dpi=100)
         self.subPlot = f.add_subplot(111)
 
-        # subPlot.scatter(x,y)
+        self.subPlot.scatter(self.xAxis, self.yAxis)
 
-        canvas = FigureCanvasTkAgg (f, master=root)
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=True)
+        self.canvas = FigureCanvasTkAgg (f, root)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=True)
 
-        toolbar = NavigationToolbar2Tk(canvas, root)
+        toolbar = NavigationToolbar2Tk(self.canvas, root)
         toolbar.update()
-        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+        self.canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 
         panedWindow = ttk.PanedWindow(root, orient=tkinter.HORIZONTAL)
         panedWindow.pack(fill=tkinter.BOTH, expand=True )
@@ -71,47 +76,83 @@ class Plot:
         labelStart = ttk.Label(frame1, font=("Courier", 16), text= "Start\t: ")
         labelStart.grid(row=0, column=0, padx=10)
 
-        entryStart = ttk.Entry(frame1, width=30)
+        entryStart = ttk.Entry(frame1, width=30, font='Courier 16')
         entryStart.insert(0, str(self.xAxis[0]))
         entryStart.grid(row=0, column=1, padx=10)
 
         labelEnd = ttk.Label(frame1, font=("Courier", 16), text="End\t: ")
         labelEnd.grid(row=1, column=0, padx=10)
 
-        entryEnd = ttk.Entry(frame1, width=30)
+        entryEnd = ttk.Entry(frame1, width=30, font='Courier 16')
         entryEnd.insert(0, str(self.xAxis[-1]))
         entryEnd.grid(row=1, column=1, padx=10)
 
         # in the update button we call updatePlot
         updateButton = ttk.Button(frame1,
-                        command=lambda: updatePlot(entryStart.get(), entryEnd.get()),
-                        text="UPDATE").grid(row=0, column=2, rowspan=2, padx=10)
+                        command=lambda: self.updatePlot(entryStart.get(), entryEnd.get()),
+                        text="UPDATE",
+                        font = 'Arial 18 bold').grid(row=0, column=2, rowspan=2, padx=10)
 
-        def updatePlot(entryStart, entryEnd):
-            """
-            Function called when the button UPDATE is clicked.
+    def updatePlot(self, entryStart, entryEnd):
+        """
+        Function called when the button UPDATE is clicked.
 
-            args entryStart, entryEnd: should be strings in datetime format '%Y-%m-%d %H:%M:%S'
-            """
-            try:
-                s = datetime.strptime(entryStart, '%Y-%m-%d %H:%M:%S')
-                e = datetime.strptime(entryEnd, '%Y-%m-%d %H:%M:%S')
-                if s < self.xAxis[0] or e > self.xAxis[-1]:
-                    class dateOutOfRange(BaseException):
-                        result = "the date ranges introduced are not between {} and {}".format(self.xAxis[0], self.xAxis[-1])
-                    raise dateOutOfRange
-                else:
-                    result = "fecha start mayor o igual"
-                msg = ("start:",s,"end:",e,"\nresult: {} a {}".format(result, self.xAxis[0]))
-                messagebox.showinfo('warn', msg)
+        args entryStart, entryEnd: should be strings in datetime format '%Y-%m-%d %H:%M:%S'
+        """
+        try:
+            s = datetime.strptime(entryStart, '%Y-%m-%d %H:%M:%S')
+            e = datetime.strptime(entryEnd, '%Y-%m-%d %H:%M:%S')
+            if s < self.xAxis[0] or e > self.xAxis[-1]:
+                errMsg = "the date ranges introduced are not between\n{} and\n{}".format(self.xAxis[0], self.xAxis[-1])
+                messagebox.showerror("Error", errMsg)
+            elif e <= s :
+                messagebox.showerror(title='Invalid Input Values',
+                                 message='End Date must be after Start Date')
+                return
+            else:
+                # subArrayX = self.buildSubArray(s, e)
+                # itemindexS = np.where(self.xAxis >= s)
+                # itemindexE = np.where(self.xAxis <= e)
+                itemindexS = np.searchsorted(self.xAxis, s)
+                itemindexE = np.searchsorted(self.xAxis, e)
+                # # messagebox.showinfo("info", (subArrayX[0], subArrayX[-1]))
+                # self.subX = subArrayX
+                # self.buildSubArray(s, e)
+                self.subPlot.clear()
 
-            except dateOutOfRange:
-                messagebox.showerror("Error", dateOutOfRange.result)
-            except Exception as e:
-                messagebox.showerror("Error", "Error updating plot:\n{}".format(e))
+                # self.subPlot.plot_d
+                # messagebox.showinfo("info", (self.xAxis[itemindexS], self.yAxis[itemindexS]))
 
-    def scatterPlot(self):
-            self.subPlot.scatter(self.xAxis, self.yAxis)
+                # self.subPlot.scatter([self.xAxis[itemindexS], self.xAxis[itemindexE] ],
+                #                     [self.yAxis[itemindexS], self.yAxis[itemindexE] ])
+                self.subPlot.scatter(self.xAxis[itemindexS:itemindexE] ,
+                                    self.yAxis[itemindexS:itemindexE])
+                self.canvas.draw()
+
+        except Exception as e:
+            messagebox.showerror("Error", "Error updating plot:\n{}".format(e))
+        # else:
+        #     self.scatterPlot()
+
+    # it returns an array from xAxes with dates between the given start
+    # and end dates
+    # def buildSubArray(self, s, e):
+    #     subListX = []
+    #     subListY = []
+    #     for d in self.xAxis:
+    #         if d >= s and d <= e:
+    #             subListX.append(d)
+    #             itemindex = np.where(self.xAxis == d)
+    #             print(itemindex, self.yAxis[itemindex])
+    #             subListY.append(self.yAxis[itemindex])
+    #     self.subX = np.array(subListX)
+    #     self.subY = np.array(subListY)
+    #     messagebox.showinfo("info", (self.subX[0], "\n",self.subY[0]))
+
+        # return np.array(subListX)
+
+    # def scatterPlot(self):
+    #     self.subPlot.scatter(self.subX, self.subY)
 
 def get_files(regex):
     """ Returns a list of files in the current folder that match pattern in their name.
@@ -149,11 +190,10 @@ def extractData(data_files):
                 # the y axis of the plot was displayed unordered because it was not float
                 presion.append(float(row[2]))
 
-        print("loading data from: ", file)
+        print("loading data from", file, ", total files:", len(fecha))
     nfecha = np.array(fecha)
     npresion = np.array(presion)
     return nfecha, npresion
-
 
 # the following IF statement is done to identify if the script is being executed or imported as a module
 # if it is exec name == main and if it is imported name = moduleName
